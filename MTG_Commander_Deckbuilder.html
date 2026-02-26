@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Commander">
+<title>MTG Commander Deckbuilder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#070709;--s1:#0f0f12;--s2:#161619;--s3:#1e1e22;--s4:#262629;
+  --b1:#2c2c30;--b2:#3a3a3f;--b3:#505058;
+  --t1:#f0ece4;--t2:#b8b4ac;--t3:#787470;--t4:#404040;
+  --gold:#d4902a;--gold2:#e8a83a;--gold3:#b87820;
+  --gbg:rgba(212,144,42,.07);--gglow:rgba(212,144,42,.18);
+  --W:#ddd4b8;--U:#7aaed8;--B:#a888d8;--R:#d87858;--G:#68b888;--C:#a8a8b0;
+  --safe-t:env(safe-area-inset-top,0px);--safe-b:env(safe-area-inset-bottom,0px);
+}
+*,::before,::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{height:100%;scroll-behavior:smooth}
+body{background:var(--bg);color:var(--t1);font-family:'DM Sans',system-ui,sans-serif;font-size:15px;line-height:1.6;min-height:100%;-webkit-font-smoothing:antialiased}
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.4;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='g'%3E%3CfeTurbulence baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23g)' opacity='.05'/%3E%3C/svg%3E");background-size:200px}
+body::after{content:'';position:fixed;top:-400px;left:50%;transform:translateX(-50%);z-index:0;pointer-events:none;width:1000px;height:600px;background:radial-gradient(ellipse at center,rgba(212,144,42,.04) 0%,transparent 65%)}
+::-webkit-scrollbar{width:3px;height:3px}::-webkit-scrollbar-thumb{background:var(--b2);border-radius:2px}
+h1,h2,.syne{font-family:'Syne',sans-serif}
+.mono{font-family:'DM Mono',monospace}
+header{position:sticky;top:0;z-index:400;background:rgba(7,7,9,.94);border-bottom:1px solid var(--b1);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);padding:0 22px;padding-top:var(--safe-t);display:flex;align-items:flex-end;justify-content:space-between;gap:16px;height:calc(56px + var(--safe-t))}
+.logo{display:flex;align-items:center;gap:9px;padding-bottom:13px}
+.hex{width:24px;height:24px;background:var(--gold);flex-shrink:0;clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%)}
+.logo-t{font-family:'Syne',sans-serif;font-size:13px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--t1)}
+.logo-s{font-size:9px;color:var(--t3);letter-spacing:.08em;text-transform:uppercase;margin-top:1px}
+.steps{display:flex;align-items:center;height:100%;gap:0}
+.dot{display:flex;align-items:center;height:100%;padding:0 10px;gap:6px;border-bottom:2px solid transparent;opacity:.2;transition:all .25s}
+.dot.active{opacity:1;border-bottom-color:var(--gold)}
+.dot.done{opacity:.45}
+.dot-n{width:17px;height:17px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:9px;background:var(--s3);color:var(--t3);transition:all .25s;flex-shrink:0}
+.dot.active .dot-n{background:var(--gold);color:#000}
+.dot.done .dot-n{background:var(--b2);color:var(--t1)}
+.dot-l{font-size:10px;font-weight:500;color:var(--t3)}
+.dot.active .dot-l{color:var(--t1)}
+.sep{color:var(--b1);font-size:11px}
+main{position:relative;z-index:1;max-width:1080px;margin:0 auto;padding:44px 22px calc(110px + var(--safe-b))}
+.page{display:none;animation:up .3s cubic-bezier(.16,1,.3,1) both}
+.page.on{display:block}
+@keyframes up{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.wrap{max-width:680px;margin:0 auto}
+.ptitle{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;letter-spacing:-.02em;color:var(--t1);margin-bottom:7px;line-height:1.1}
+.psub{font-size:13px;color:var(--t3);margin-bottom:32px;font-weight:300}
+.flabel{font-family:'DM Mono',monospace;font-size:9px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--t3);margin-bottom:9px;margin-top:28px;display:flex;align-items:center;gap:10px}
+.flabel::after{content:'';flex:1;height:1px;background:var(--b1);max-width:44px}
+.sw{position:relative;margin-bottom:8px}
+.sr{display:flex;align-items:center;background:var(--s1);border:1px solid var(--b1);border-radius:10px;overflow:hidden;transition:border-color .2s,box-shadow .2s}
+.sr:focus-within{border-color:var(--gold);box-shadow:0 0 0 3px var(--gbg)}
+.si{flex:1;padding:14px 15px;background:transparent;border:none;color:var(--t1);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;min-width:0}
+.si::placeholder{color:var(--b2)}
+.sico{padding:0 15px;color:var(--t3);font-size:15px;flex-shrink:0;user-select:none}
+.scl{padding:0 15px;background:none;border:none;color:var(--t3);cursor:pointer;font-size:19px;line-height:1;min-width:46px;display:flex;align-items:center;justify-content:center;transition:color .15s}
+.scl:hover{color:var(--t1)}
+.sspin{padding:0 14px;display:flex;align-items:center}
+.spn{display:inline-block;animation:rot .6s linear infinite;color:var(--t3)}
+@keyframes rot{to{transform:rotate(360deg)}}
+.dr{position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:500;background:var(--s1);border:1px solid var(--b1);border-radius:10px;box-shadow:0 28px 80px rgba(0,0,0,.9),0 0 0 1px rgba(255,255,255,.04);max-height:380px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.dri{display:flex;align-items:center;gap:11px;padding:10px 13px;cursor:pointer;border-bottom:1px solid var(--b1);transition:background .1s}
+.dri:last-child{border-bottom:none}
+.dri:hover,.dri:active{background:var(--s2)}
+.drimg{width:30px;height:42px;border-radius:4px;object-fit:cover;object-position:top;flex-shrink:0;background:var(--s2)}
+.drname{font-size:13px;font-weight:500;color:var(--t1);line-height:1.2}
+.drtype{font-size:9px;color:var(--t3);margin-top:2px;font-family:'DM Mono',monospace}
+.drci{display:flex;gap:3px;margin-top:3px}
+.ciw{width:6px;height:6px;border-radius:50%}
+.drrank{font-size:9px;color:var(--t4);font-family:'DM Mono',monospace;margin-top:1px}
+.cmdr{display:flex;background:var(--s1);border:1px solid var(--b1);border-radius:14px;overflow:hidden;margin-bottom:22px;box-shadow:0 12px 50px rgba(0,0,0,.6);transition:border-color .2s}
+.cmdr:hover{border-color:var(--b2)}
+.cmdr-bar{width:4px;flex-shrink:0}
+.cmdr-img{width:108px;flex-shrink:0;object-fit:cover;object-position:20% 15%;display:block}
+.cmdr-body{padding:16px 18px;flex:1;min-width:0;display:flex;flex-direction:column;gap:7px}
+.cmdr-name{font-family:'Syne',sans-serif;font-size:17px;font-weight:700;color:var(--t1);line-height:1.2;letter-spacing:-.01em}
+.cmdr-type{font-size:10px;color:var(--t3);font-family:'DM Mono',monospace}
+.cmdr-cost{display:inline-block;font-family:'DM Mono',monospace;font-size:11px;color:var(--gold);background:rgba(212,144,42,.08);border:1px solid rgba(212,144,42,.17);padding:3px 9px;border-radius:6px;letter-spacing:.05em}
+.cmdr-cols{display:flex;gap:4px;flex-wrap:wrap}
+.cmdr-col{padding:2px 8px;border-radius:100px;font-size:9px;font-weight:500;font-family:'DM Mono',monospace;background:rgba(255,255,255,.04);border:1px solid var(--b1)}
+.cmdr-txt{font-size:12px;color:var(--b3);line-height:1.65;font-style:italic;font-weight:300;padding-left:9px;border-left:2px solid var(--b1)}
+.cmdr-pt{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--gold)}
+.cmdr-rank{font-size:9px;color:var(--b2);font-family:'DM Mono',monospace}
+.bgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:30px}
+.bc{background:var(--s1);border:1px solid var(--b1);border-radius:10px;padding:15px;cursor:pointer;transition:border-color .2s,background .2s,transform .12s;position:relative;overflow:hidden}
+.bc::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--cc,transparent)}
+.bc:hover{border-color:var(--b2);transform:translateY(-1px)}
+.bc.sel{background:var(--s2)}
+.bc-bg{font-family:'Syne',sans-serif;font-size:38px;font-weight:800;color:var(--cc,var(--b1));opacity:.1;position:absolute;top:2px;right:10px;line-height:1;pointer-events:none}
+.bc-lbl{display:inline-flex;align-items:center;gap:5px;margin-bottom:5px}
+.bc-dot{width:6px;height:6px;border-radius:50%;background:var(--cc,var(--t3))}
+.bc-name{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--cc,var(--t1))}
+.bc-desc{font-size:11px;color:var(--t3);margin-bottom:8px;font-weight:300}
+.bc-rules{display:flex;flex-direction:column;gap:2px}
+.bc-rule{font-size:9px;color:var(--t4);font-family:'DM Mono',monospace}
+.bc-rule::before{content:'— '}
+.og{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:30px}
+.oc{padding:7px 13px;border-radius:100px;background:var(--s1);border:1px solid var(--b1);cursor:pointer;transition:all .15s}
+.oc:hover{border-color:var(--b2)}
+.oc.sel{background:var(--gbg);border-color:var(--gold)}
+.oc-n{font-size:11px;font-weight:500;color:var(--t2)}
+.oc.sel .oc-n{color:var(--gold)}
+.oc-s{font-size:9px;color:var(--t4);margin-top:1px;font-family:'DM Mono',monospace}
+.oc.sel .oc-s{color:rgba(212,144,42,.5)}
+.pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:30px}
+.pc{background:var(--s1);border:1px solid var(--b1);border-radius:9px;padding:11px 12px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .2s}
+.pc:hover{border-color:var(--b2)}
+.pc.sel{background:var(--s2)}
+.pc-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.pc-l{font-size:11px;font-weight:500;font-family:'DM Mono',monospace;color:var(--t3)}
+.pc.sel .pc-l{color:var(--t1)}
+.agrid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:26px}
+.ac{background:var(--s1);border:1px solid var(--b1);border-radius:9px;padding:13px 9px;cursor:pointer;transition:all .2s;text-align:center}
+.ac:hover{border-color:var(--b2);transform:translateY(-1px)}
+.ac.sel{background:var(--gbg);border-color:var(--gold);box-shadow:0 0 20px rgba(212,144,42,.07)}
+.ac-g{font-family:'Syne',sans-serif;font-size:13px;font-weight:800;color:var(--b2);margin-bottom:5px;transition:color .2s}
+.ac.sel .ac-g{color:var(--gold)}
+.ac-n{font-size:9px;font-weight:600;color:var(--t3);font-family:'DM Sans',sans-serif;margin-bottom:2px;transition:color .2s;text-transform:uppercase;letter-spacing:.04em}
+.ac.sel .ac-n{color:var(--gold2)}
+.ac-d{font-size:8px;color:var(--t4);line-height:1.3}
+.sbox{background:var(--s1);border:1px solid var(--b1);border-radius:9px;padding:15px 17px;margin-top:18px}
+.srow{display:flex;gap:10px;margin-bottom:5px;align-items:baseline;font-size:13px}
+.sk{font-family:'DM Mono',monospace;font-size:9px;color:var(--t3);min-width:82px;letter-spacing:.05em;text-transform:uppercase}
+.sv{color:var(--t1);font-size:13px}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:13px 26px;background:var(--gold);border:none;border-radius:9px;color:#000;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;min-height:46px;box-shadow:0 4px 20px rgba(212,144,42,.22);transition:all .15s}
+.btn:hover{background:var(--gold2);box-shadow:0 6px 28px rgba(212,144,42,.3)}
+.btn:active{transform:scale(.98)}
+.btn:disabled{background:var(--b1);color:var(--t3);box-shadow:none;cursor:not-allowed}
+.btng{display:inline-flex;align-items:center;gap:7px;padding:12px 18px;background:transparent;border:1px solid var(--b1);border-radius:9px;color:var(--t3);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;min-height:46px;transition:all .15s}
+.btng:hover{border-color:var(--b2);color:var(--t1)}
+.btng:active{transform:scale(.98)}
+.nav{display:flex;justify-content:space-between;align-items:center;margin-top:30px;gap:10px}
+.collbox{margin-top:22px;background:var(--s1);border:1px solid var(--b1);border-radius:10px;padding:16px}
+.dz{border:1px dashed var(--b2);border-radius:7px;padding:16px;text-align:center;cursor:pointer;font-size:11px;color:var(--t3);font-family:'DM Mono',monospace;transition:all .2s;min-height:52px;display:flex;align-items:center;justify-content:center}
+.dz:hover,.dz.drag{border-color:var(--gold);color:var(--gold)}
+.dz.loaded{border-color:rgba(212,144,42,.3);color:var(--gold2);background:rgba(212,144,42,.03);border-style:solid}
+.lw{max-width:380px;margin:80px auto;text-align:center}
+.lsp{width:36px;height:36px;margin:0 auto 20px;border:2px solid var(--b1);border-top-color:var(--gold);border-radius:50%;animation:rot .75s linear infinite}
+.lt{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;color:var(--t1);margin-bottom:5px}
+.lm{font-size:12px;color:var(--t3);margin-bottom:20px;font-weight:300}
+.ll{text-align:left;max-width:270px;margin:0 auto}
+.li{font-size:10px;font-family:'DM Mono',monospace;color:var(--t4);margin-bottom:3px;opacity:0;animation:ap .35s forwards}
+@keyframes ap{to{opacity:1;color:var(--t3)}}
+.ebox{max-width:400px;margin:80px auto;text-align:center;background:var(--s1);border:1px solid #3a1a1a;border-radius:14px;padding:28px}
+.etit{font-family:'Syne',sans-serif;font-size:18px;color:#e07070;margin-bottom:8px}
+.emsg{font-size:11px;color:#a05050;line-height:1.65;margin-bottom:16px;word-break:break-word;font-family:'DM Mono',monospace}
+.einl{font-size:11px;color:#e07070;margin-top:6px;padding:8px 11px;background:rgba(180,50,50,.08);border:1px solid rgba(180,50,50,.17);border-radius:6px;font-family:'DM Mono',monospace}
+.rh{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;flex-wrap:wrap;gap:12px}
+.rt{font-family:'Syne',sans-serif;font-size:23px;font-weight:800;color:var(--t1);letter-spacing:-.02em;margin-bottom:5px}
+.rc{display:flex;gap:5px;flex-wrap:wrap}
+.chip{padding:3px 9px;border-radius:100px;background:var(--s1);border:1px solid var(--b1);font-size:10px;font-family:'DM Mono',monospace}
+.ra{display:flex;gap:7px;flex-wrap:wrap}
+.ir{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.ic{background:var(--s1);border:1px solid var(--b1);border-radius:9px;padding:12px 14px}
+.icl{font-family:'DM Mono',monospace;font-size:9px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:5px}
+.ict{font-size:11px;color:var(--t3);line-height:1.5;font-weight:300}
+.tbar{display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;border-bottom:1px solid var(--b1);margin-bottom:16px;scrollbar-width:none;gap:0}
+.tbar::-webkit-scrollbar{display:none}
+.tb{flex-shrink:0;padding:0 14px;height:40px;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--t3);cursor:pointer;font-size:11px;font-weight:500;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:5px;white-space:nowrap;transition:all .15s}
+.tb:hover{color:var(--t2)}
+.tb.active{color:var(--t1);border-bottom-color:var(--gold)}
+.tct{padding:1px 5px;border-radius:100px;background:var(--s2);font-size:9px;font-family:'DM Mono',monospace;color:var(--t3)}
+.tb.active .tct{background:rgba(212,144,42,.1);color:var(--gold)}
+.cath{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:13px;flex-wrap:wrap;gap:8px}
+.catname{font-family:'Syne',sans-serif;font-size:17px;font-weight:700;color:var(--t1);letter-spacing:-.01em}
+.catdesc{font-size:12px;color:var(--t3);margin-top:2px;font-weight:300}
+.aab{padding:8px 14px;background:transparent;border:1px solid var(--b1);border-radius:6px;color:var(--t3);cursor:pointer;font-size:10px;font-family:'DM Mono',monospace;transition:all .15s;white-space:nowrap;min-height:34px}
+.aab:hover{border-color:var(--gold);color:var(--gold)}
+.cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(188px,1fr));gap:9px;margin-bottom:80px}
+.ccard{background:var(--s1);border:1px solid var(--b1);border-radius:9px;overflow:hidden;transition:border-color .15s,transform .15s}
+.ccard:hover{border-color:var(--b2);transform:translateY(-1px)}
+.ccard.ind{border-color:#235535;background:#060d08}
+.ccard.now{opacity:.3}
+.caw{height:68px;overflow:hidden;background:var(--s2);position:relative}
+.cai{width:100%;height:100%;object-fit:cover;object-position:15% 18%;display:block}
+.cao{position:absolute;inset:0;background:linear-gradient(to top,rgba(7,7,9,.75) 0%,transparent 55%)}
+.cbody{padding:9px 10px}
+.cname{font-size:12px;font-weight:600;color:var(--t1);line-height:1.3;margin-bottom:2px}
+.ctype{font-size:9px;color:var(--t4);font-family:'DM Mono',monospace;margin-bottom:3px}
+.ctxt{font-size:10px;color:#484858;line-height:1.45;margin-bottom:6px;font-style:italic;font-weight:300}
+.cft{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.pds{display:flex;gap:2px}
+.pd{width:4px;height:4px;border-radius:50%}
+.pd.on{background:var(--gold)}
+.pd.off{background:var(--b1)}
+.ptag{font-size:8px;padding:2px 4px;border-radius:3px;font-family:'DM Mono',monospace;font-weight:500}
+.ptag.low{background:#0a1a0d;color:#50c080}
+.ptag.mid{background:#1a1200;color:#c89030}
+.ptag.high{background:#1a0808;color:#c06060}
+.obadge{font-size:8px;padding:2px 4px;border-radius:3px;font-family:'DM Mono',monospace}
+.oy{background:#0a1a0d;color:#50c080}
+.on2{background:#1a0808;color:#c06060}
+.prc{font-size:9px;color:#50c080;font-family:'DM Mono',monospace;margin-left:auto}
+.addb{padding:4px 8px;border-radius:4px;cursor:pointer;font-size:10px;border:1px solid var(--b1);background:var(--s2);color:var(--t3);transition:all .15s;font-family:'DM Mono',monospace;white-space:nowrap;min-height:28px;font-weight:500}
+.addb:active{transform:scale(.96)}
+.ccard.ind .addb{border-color:#235535;color:#50c080;background:#060d08}
+.dp{position:fixed;right:14px;bottom:calc(14px + var(--safe-b));width:220px;z-index:500;background:rgba(10,10,12,.97);border:1px solid var(--b2);border-radius:14px;padding:12px;box-shadow:0 28px 90px rgba(0,0,0,.95);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);display:flex;flex-direction:column;max-height:420px}
+.dpt{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--gold);margin-bottom:3px;letter-spacing:.05em;text-transform:uppercase}
+.dpc{font-size:9px;color:var(--t3);margin-bottom:7px;padding-bottom:7px;border-bottom:1px solid var(--b1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-style:italic}
+.dpl{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;margin-bottom:7px}
+.dpli{display:flex;align-items:center;gap:3px;font-size:9px;color:var(--t3);margin-bottom:3px;font-family:'DM Mono',monospace}
+.dpli span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dprm{background:none;border:none;color:#904040;cursor:pointer;padding:0;font-size:13px;line-height:1;min-width:18px}
+.dprm:hover{color:#e07070}
+.dpbtns{display:flex;gap:5px}
+.dpb{flex:1;padding:8px 0;border-radius:6px;cursor:pointer;font-weight:600;font-size:10px;font-family:'DM Mono',monospace;text-align:center;transition:opacity .15s;min-height:32px;display:flex;align-items:center;justify-content:center}
+.dpb.a{background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.22);color:#60a5fa}
+.dpb.s{background:rgba(50,192,100,.06);border:1px solid rgba(50,192,100,.22);color:#50c080}
+.dpb:hover{opacity:.75}
+textarea{width:100%;padding:11px 13px;background:var(--s1);border:1px solid var(--b1);border-radius:9px;color:var(--t1);font-size:14px;outline:none;font-family:'DM Sans',sans-serif;line-height:1.65;resize:vertical;-webkit-appearance:none;transition:border-color .2s}
+textarea:focus{border-color:var(--gold);box-shadow:0 0 0 3px var(--gbg)}
+textarea::placeholder{color:var(--b2);font-weight:300}
+@media(max-width:640px){
+  header{padding:0 16px;padding-top:var(--safe-t)}
+  main{padding:28px 14px calc(100px + var(--safe-b))}
+  .ptitle{font-size:22px}
+  .bgrid{grid-template-columns:1fr}
+  .pgrid{grid-template-columns:1fr 1fr}
+  .agrid{grid-template-columns:repeat(2,1fr)}
+  .ir{grid-template-columns:1fr}
+  .cgrid{grid-template-columns:repeat(2,1fr)}
+  .dp{right:8px;width:calc(100vw - 16px)}
+  .cmdr-img{width:85px}
+  .dot-l{display:none}
+  .sep{margin:0}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">
+    <div class="hex"></div>
+    <div><div class="logo-t">Commander</div><div class="logo-s">Deckbuilder</div></div>
+  </div>
+  <div class="steps">
+    <div class="dot active" id="d1"><div class="dot-n" id="dn1">1</div><span class="dot-l">Commander</span></div>
+    <div class="sep">›</div>
+    <div class="dot" id="d2"><div class="dot-n" id="dn2">2</div><span class="dot-l">Powerlevel</span></div>
+    <div class="sep">›</div>
+    <div class="dot" id="d3"><div class="dot-n" id="dn3">3</div><span class="dot-l">Spielstil</span></div>
+    <div class="sep">›</div>
+    <div class="dot" id="d4"><div class="dot-n" id="dn4">4</div><span class="dot-l">Deck</span></div>
+  </div>
+</header>
+<main>
+<div class="page on" id="p1"><div class="wrap">
+  <h1 class="ptitle">Wähle deinen Commander</h1>
+  <p class="psub">Echtzeit-Suche in der Scryfall-Datenbank — 26.000+ Karten, live Preise & EDHREC-Daten.</p>
+  <div class="sw" id="sw">
+    <div class="sr">
+      <span class="sico">⌕</span>
+      <input class="si" id="si" type="search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Name eingeben… Atraxa, Krenko, Edgar Markov…">
+      <div class="sspin" id="spin" style="display:none"><span class="spn">◌</span></div>
+      <button class="scl" id="scl" style="display:none" onclick="clrS()">×</button>
+    </div>
+    <div class="dr" id="dr" style="display:none"></div>
+  </div>
+  <div id="serr" style="display:none"></div>
+  <div id="sres" style="display:none;margin-top:15px"></div>
+  <div class="collbox">
+    <div class="flabel" style="margin-top:0">Sammlung <span style="font-size:9px;color:var(--t4);text-transform:none;letter-spacing:0;font-weight:300;font-family:'DM Sans',sans-serif">— optional</span></div>
+    <div style="font-size:11px;color:var(--t3);margin-bottom:9px;font-weight:300">Moxfield CSV · Archidekt CSV · MTGO · Plain Text</div>
+    <div class="dz" id="dz" onclick="document.getElementById('cf').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="hdrop(event)">Datei ablegen oder tippen</div>
+    <input type="file" id="cf" accept=".csv,.txt" style="display:none" onchange="loadF(this.files[0])">
+    <div id="ci2" style="display:none;margin-top:9px;font-size:11px;font-family:'DM Mono',monospace;color:var(--gold);align-items:center;gap:10px">
+      <span id="ct"></span>
+      <button onclick="clrC()" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:11px;text-decoration:underline;font-family:'DM Sans',sans-serif">Entfernen</button>
+    </div>
+  </div>
+</div></div>
+
+<div class="page" id="p2"><div class="wrap">
+  <h1 class="ptitle">Powerlevel & Budget</h1>
+  <p class="psub">Das Bracket definiert welche Karten vorgeschlagen werden.</p>
+  <div class="flabel" style="margin-top:0">Power-Bracket</div>
+  <div class="bgrid" id="bgrid"></div>
+  <div class="flabel">Optionale Zusätze</div>
+  <div class="og" id="og"></div>
+  <div class="flabel">Budget</div>
+  <div class="pgrid" id="pgrid"></div>
+  <div class="nav">
+    <button class="btng" onclick="go(1)">← Zurück</button>
+    <button class="btn" id="s2n" onclick="go(3)" disabled>Weiter</button>
+  </div>
+</div></div>
+
+<div class="page" id="p3"><div class="wrap">
+  <h1 class="ptitle">Spielstil & Archetyp</h1>
+  <p class="psub">Der Archetyp bestimmt welche Synergiekarten geladen werden.</p>
+  <div class="flabel" style="margin-top:0">Deck-Archetyp <span style="font-size:9px;color:var(--t4);text-transform:none;letter-spacing:0;font-weight:300;font-family:'DM Sans',sans-serif">— empfohlen</span></div>
+  <div class="agrid" id="agrid"></div>
+  <div class="flabel">Strategie-Notiz</div>
+  <textarea id="strat" rows="2" placeholder="z.B. Elfenstamm mit Haste-Combo, kein Stax…"></textarea>
+  <div class="sbox" id="sumbox"></div>
+  <div class="nav">
+    <button class="btng" onclick="go(2)">← Zurück</button>
+    <button class="btn" onclick="gen()">Deck generieren →</button>
+  </div>
+</div></div>
+
+<div class="page" id="p4">
+  <div id="p4l" style="display:none"><div class="lw">
+    <div class="lsp"></div><div class="lt">Deck wird gebaut</div>
+    <div class="lm" id="lmsg">Verbinde mit Scryfall…</div>
+    <div class="ll" id="llog"></div>
+  </div></div>
+  <div id="p4e" style="display:none"><div class="ebox">
+    <div class="etit">Verbindungsfehler</div>
+    <div class="emsg" id="etxt"></div>
+    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+      <button class="btng" onclick="go(3)">← Zurück</button>
+      <button class="btn" onclick="gen()">Erneut versuchen</button>
+    </div>
+  </div></div>
+  <div id="p4r" style="display:none">
+    <div class="rh">
+      <div><div class="rt" id="rtit"></div><div class="rc" id="rchips"></div></div>
+      <div class="ra">
+        <button class="btng" style="font-size:12px;padding:9px 14px;min-height:40px" onclick="go(3);document.getElementById('p4r').style.display='none'">Anpassen</button>
+        <button class="btng" style="font-size:12px;padding:9px 14px;min-height:40px;border-color:rgba(59,130,246,.25);color:#60a5fa" onclick="expA()">Alles .txt</button>
+      </div>
+    </div>
+    <div class="ir" id="rinfo"></div>
+    <div class="tbar" id="rtabs"></div>
+    <div id="rcont"></div>
+  </div>
+  <div class="dp" id="dp" style="display:none">
+    <div class="dpt">Decklist · <span id="dpcnt">0</span></div>
+    <div class="dpc" id="dpcmdr"></div>
+    <div class="dpl" id="dplist"></div>
+    <div class="dpbtns">
+      <button class="dpb a" onclick="expA()">Alles</button>
+      <button class="dpb s" onclick="expS()">Auswahl</button>
+    </div>
+  </div>
+</div>
+</main>
+<script>
+const SF='https://api.scryfall.com';
+const BR=[{id:1,label:'Casual',c:'#50c080',desc:'Pre-Con Level. Einsteigerfreundlich.',rules:['Keine Kombos','Keine Tutoren','Wenig Fast-Mana','Kein MLD']},{id:2,label:'Focused',c:'#60a5fa',desc:'Upgraded Pre-Con. Klare Strategie.',rules:['Keine Kombos','Max 2–3 Tutoren','Kein Turn-5-Win']},{id:3,label:'Optimized',c:'#d4902a',desc:'Starke Synergien, interaktiv.',rules:['Interaction erwartet','Klare Gewinnbedingung','Starke Synergien OK']},{id:4,label:'cEDH',c:'#e07070',desc:'Competitive. Maximale Effizienz.',rules:['Alles Legale erlaubt','Fast-Mana OK','Turn 3–4 Win möglich']}];
+const OPT=[{id:'gc',n:'Gamechanger Cards',s:'Sol Ring, Mana Crypt…'},{id:'combo',n:'Infinite Combos',s:'Unendliche Kombos'},{id:'tutor',n:'Alle Tutoren',s:'Unbegrenzte Tutoren'},{id:'stax',n:'Stax Pieces',s:'Symmetrische Locks'},{id:'extra',n:'Extra Turns',s:'Extrazüge erlaubt'},{id:'mld',n:'Mass Land Destroy',s:'MLD erlaubt'}];
+const PT=[{id:'xs',l:'Unter $50',max:50,c:'#50c080'},{id:'s',l:'$50–$100',max:100,c:'#34d399'},{id:'m',l:'$100–$300',max:300,c:'#60a5fa'},{id:'l',l:'$300–$600',max:600,c:'#a78bfa'},{id:'xl',l:'$600–$1500',max:1500,c:'#d4902a'},{id:'op',l:'Kein Limit',max:9999,c:'#e07070'}];
+const AR=[{id:'blink',n:'Blink/ETB',g:'B',d:'ETB wiederholen'},{id:'landfall',n:'Landfall',g:'L',d:'Länder nutzen'},{id:'counters',n:'+1/+1',g:'+',d:'Counter-Synergien'},{id:'infect',n:'Infect',g:'!',d:'10 Gift-Marker'},{id:'tokens',n:'Tokens',g:'T',d:'Massen von Tokens'},{id:'reanimator',n:'Reanimator',g:'R',d:'Friedhof nutzen'},{id:'combo',n:'Combo',g:'C',d:'Unendliche Kombos'},{id:'voltron',n:'Voltron',g:'V',d:'Commander pumpen'},{id:'aristocrats',n:'Aristocrats',g:'A',d:'Kreaturen opfern'},{id:'spellslinger',n:'Spellslinger',g:'S',d:'Viele Zauber'},{id:'stax',n:'Stax',g:'X',d:'Gegner verlangsamen'},{id:'theft',n:'Theft',g:'?',d:'Stehlen'},{id:'tribal',n:'Tribal',g:'*',d:'Ein Kreaturentyp'},{id:'enchantress',n:'Enchantress',g:'E',d:'Verzauberungen'},{id:'graveyard',n:'Graveyard',g:'G',d:'Friedhof nutzen'},{id:'artifacts',n:'Artifacts',g:'O',d:'Artefakt-Ketten'}];
+const CN={W:'Weiß',U:'Blau',B:'Schwarz',R:'Rot',G:'Grün',C:'Farblos'};
+const CH={W:'#ddd4b8',U:'#7aaed8',B:'#a888d8',R:'#d87858',G:'#68b888',C:'#a8a8b0'};
+const BL={W:'Plains',U:'Island',B:'Swamp',R:'Mountain',G:'Forest'};
+const S={step:1,cmd:null,bracket:null,opts:[],pt:null,arch:null,coll:null,collMode:false,cats:[],dl:[]};
+const sfGet=async p=>{const r=await fetch(SF+p,{mode:'cors'});if(!r.ok)throw new Error('Scryfall '+r.status);return r.json();};
+const sfS=async q=>{const d=await sfGet('/cards/search?q='+encodeURIComponent(q)+'&order=edhrec&unique=cards&page=1');return d.data||[];};
+const sfQ=async(q,n)=>{try{return(await sfS(q)).slice(0,n)}catch{return[]}};
+const slp=ms=>new Promise(r=>setTimeout(r,ms));
+const e=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const eA=s=>String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+const eJ=o=>"'"+JSON.stringify(o).replace(/\\/g,'\\\\').replace(/'/g,"\\'")+"\'";;
+const gi=(c,z)=>c.image_uris?.[z]||c.card_faces?.[0]?.image_uris?.[z]||null;
+let tmr=null,lQ='';
+document.getElementById('si').addEventListener('input',function(){
+  const v=this.value.trim();
+  document.getElementById('scl').style.display=v?'flex':'none';
+  clearTimeout(tmr);if(v.length<2){hidD();return;}if(v===lQ)return;lQ=v;shSp(true);
+  tmr=setTimeout(()=>doSrch(v),380);
+});
+document.getElementById('si').addEventListener('keydown',e2=>{if(e2.key==='Escape')hidD();});
+document.addEventListener('touchstart',ev=>{if(!document.getElementById('sw').contains(ev.target))hidD();},{passive:true});
+document.addEventListener('click',ev=>{if(!document.getElementById('sw').contains(ev.target))hidD();});
+async function doSrch(q){
+  try{let cs=[];
+    try{cs=await sfS('is:commander name:/'+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'/ game:paper');}
+    catch{cs=await sfS('is:commander "'+q+'" game:paper');}
+    renderDr(cs.slice(0,10));
+  }catch(err){shErr(err.message);}shSp(false);
+}
+function renderDr(cs){
+  const d=document.getElementById('dr');if(!cs.length){d.style.display='none';return;}
+  d.innerHTML=cs.map(c=>{const img=gi(c,'small'),ci=c.color_identity||[];
+    return`<div class="dri" ontouchend="pick(${eJ(c)})" onclick="pick(${eJ(c)})">
+      ${img?`<img class="drimg" src="${img}" alt="" loading="lazy" onerror="this.style.display='none'">`:`<div class="drimg"></div>`}
+      <div style="flex:1;min-width:0"><div class="drname">${e(c.name)}</div>
+      <div class="drtype">${e((c.type_line||'').replace('Legendary ',''))}</div>
+      <div class="drci">${ci.map(x=>`<div class="ciw" style="background:${CH[x]||'#888'}"></div>`).join('')}</div>
+      ${c.edhrec_rank?`<div class="drrank">EDHREC #${c.edhrec_rank.toLocaleString()}</div>`:''}</div></div>`;
+  }).join('');d.style.display='block';
+}
+function hidD(){document.getElementById('dr').style.display='none';}
+function shSp(on){document.getElementById('spin').style.display=on?'flex':'none';}
+function shErr(msg){const el=document.getElementById('serr');el.className='einl';el.textContent=msg;el.style.display='block';setTimeout(()=>el.style.display='none',5000);}
+function clrS(){document.getElementById('si').value='';document.getElementById('scl').style.display='none';document.getElementById('sres').style.display='none';hidD();S.cmd=null;lQ='';}
+function pick(c){S.cmd=c;hidD();document.getElementById('si').value=c.name;document.getElementById('scl').style.display='flex';renderCmd(c);}
+function renderCmd(c){
+  const ci=c.color_identity||[];const bar=ci.length?ci.map(x=>CH[x]||'#333').join(','):'#333';
+  const imgN=gi(c,'normal');const txt=c.oracle_text||'';
+  const tags=ci.map(col=>`<span class="cmdr-col" style="color:${CH[col]||'#ccc'}">${CN[col]||col}</span>`).join('');
+  document.getElementById('sres').innerHTML=`<div class="cmdr">
+    <div class="cmdr-bar" style="background:linear-gradient(to bottom,${bar})"></div>
+    ${imgN?`<img class="cmdr-img" src="${imgN}" alt="" onerror="this.style.display='none'">` :''}
+    <div class="cmdr-body">
+      <div class="cmdr-name">${e(c.name)}</div>
+      <div class="cmdr-type">${e(c.type_line||'')}</div>
+      ${c.mana_cost?`<div class="cmdr-cost">${e(c.mana_cost)}</div>`:''}
+      <div class="cmdr-cols">${tags}</div>
+      ${txt?`<div class="cmdr-txt">${e(txt.slice(0,200))}${txt.length>200?'…':''}</div>`:''}
+      ${c.power?`<div class="cmdr-pt">${e(c.power)}/${e(c.toughness)}</div>`:''}
+      ${c.edhrec_rank?`<div class="cmdr-rank">EDHREC #${c.edhrec_rank.toLocaleString()}</div>`:''}
+      <div style="margin-top:10px"><button class="btn" onclick="go(2)">Powerlevel wählen →</button></div>
+    </div></div>`;
+  document.getElementById('sres').style.display='block';
+}
+function hdrop(ev){ev.preventDefault();document.getElementById('dz').classList.remove('drag');loadF(ev.dataTransfer.files[0]);}
+function loadF(f){if(!f)return;const r=new FileReader();r.onload=ev=>{const cards=parseC(ev.target.result);if(!cards.size){alert('Keine Karten erkannt.');return;}S.coll=new Set([...cards].map(n=>n.toLowerCase()));S.collMode=true;const d=document.getElementById('dz');d.classList.add('loaded');d.textContent=cards.size+' Karten geladen';document.getElementById('ci2').style.display='flex';document.getElementById('ct').textContent=cards.size+' Karten aus Sammlung';};r.readAsText(f);}
+function parseC(txt){const out=new Set();for(const line of txt.split(/\r?\n/).map(l=>l.trim()).filter(Boolean)){if(/^[/#]/.test(line)||/^(name|card name|quantity)/i.test(line))continue;let name=null;if(line.includes(','))name=line.split(',').map(x=>x.replace(/"/g,'').trim()).find(x=>x.length>1&&isNaN(+x));else{const m=line.match(/^(?:\d+[xX]?\s+)?(.+?)(?:\s+\*.*)?(?:\s+\(.*\).*)?$/);if(m)name=m[1].trim();}if(name){name=name.replace(/\s+\[.*\]$/,'').replace(/\s+#\d+$/,'').trim();if(name.length>1&&name.length<120)out.add(name);}}return out;}
+function clrC(){S.coll=null;S.collMode=false;const d=document.getElementById('dz');d.classList.remove('loaded');d.textContent='Datei ablegen oder tippen';document.getElementById('ci2').style.display='none';}
+function inC(n){return!S.collMode||!S.coll||S.coll.has(n.toLowerCase());}
+function setupS2(){
+  document.getElementById('bgrid').innerHTML=BR.map(b=>`<div class="bc" id="br${b.id}" style="--cc:${b.c}" onclick="selB(${b.id})"><div class="bc-bg">${b.id}</div><div class="bc-lbl"><div class="bc-dot"></div><div class="bc-name">${b.label}</div></div><div class="bc-desc">${b.desc}</div><div class="bc-rules">${b.rules.map(r=>`<div class="bc-rule">${r}</div>`).join('')}</div></div>`).join('');
+  document.getElementById('og').innerHTML=OPT.map(o=>`<div class="oc" id="oc${o.id}" onclick="togO('${o.id}')"><div class="oc-n">${o.n}</div><div class="oc-s">${o.s}</div></div>`).join('');
+  document.getElementById('pgrid').innerHTML=PT.map(p=>`<div class="pc" id="pt${p.id}" onclick="selP('${p.id}')"><div class="pc-dot" style="background:${p.c}"></div><span class="pc-l">${p.l}</span></div>`).join('');
+}
+function selB(id){S.bracket=id;document.querySelectorAll('.bc').forEach(el=>el.classList.remove('sel'));const el=document.getElementById('br'+id);el.classList.add('sel');el.style.borderColor=BR.find(x=>x.id===id).c;chk2();}
+function togO(id){const el=document.getElementById('oc'+id);if(S.opts.includes(id)){S.opts=S.opts.filter(x=>x!==id);el.classList.remove('sel');}else{S.opts.push(id);el.classList.add('sel');}}
+function selP(id){S.pt=id;document.querySelectorAll('.pc').forEach(el=>el.classList.remove('sel'));const el=document.getElementById('pt'+id);el.classList.add('sel');el.style.borderColor=PT.find(x=>x.id===id).c;chk2();}
+function chk2(){document.getElementById('s2n').disabled=!(S.bracket&&S.pt);}
+function setupS3(){document.getElementById('agrid').innerHTML=AR.map(a=>`<div class="ac" id="ac${a.id}" onclick="selA('${a.id}')"><div class="ac-g">${a.g}</div><div class="ac-n">${a.n}</div><div class="ac-d">${a.d}</div></div>`).join('');renderSum();}
+function selA(id){S.arch=S.arch===id?null:id;document.querySelectorAll('.ac').forEach(el=>el.classList.remove('sel'));if(S.arch)document.getElementById('ac'+id).classList.add('sel');renderSum();}
+function renderSum(){
+  const b=BR.find(x=>x.id===S.bracket),p=PT.find(x=>x.id===S.pt),a=AR.find(x=>x.id===S.arch);
+  const ci=S.cmd?.color_identity||[];
+  document.getElementById('sumbox').innerHTML=`<div class="flabel" style="margin-top:0;margin-bottom:11px">Zusammenfassung</div>
+    <div class="srow"><span class="sk">Commander</span><span class="sv">${S.cmd?e(S.cmd.name):'—'}</span></div>
+    <div class="srow"><span class="sk">Farben</span><span class="sv">${ci.map(c=>`<span style="color:${CH[c]};font-weight:500">${CN[c]}</span>`).join(' · ')||'Farblos'}</span></div>
+    <div class="srow"><span class="sk">Bracket</span><span class="sv" style="color:${b?.c||'#fff'}">${b?b.id+' — '+b.label:'—'}</span></div>
+    <div class="srow"><span class="sk">Budget</span><span class="sv" style="color:${p?.c||'#fff'}">${p?.l||'—'}</span></div>
+    <div class="srow"><span class="sk">Archetyp</span><span class="sv" style="color:${a?'var(--gold2)':'var(--t3)'}">${a?.n||'Kein Archetyp'}</span></div>
+    ${S.opts.length?`<div class="srow"><span class="sk">Extras</span><span class="sv">${S.opts.map(id=>OPT.find(x=>x.id===id)?.n||id).join(', ')}</span></div>`:''}
+    ${S.collMode?`<div class="srow"><span class="sk">Sammlung</span><span class="sv" style="color:var(--gold)">Aktiv</span></div>`:''}`;
+}
+async function gen(){
+  go(4);
+  document.getElementById('p4l').style.display='block';
+  document.getElementById('p4e').style.display='none';
+  document.getElementById('p4r').style.display='none';
+  document.getElementById('llog').innerHTML='';S.cats=[];S.dl=[];updDL();
+  const ci=S.cmd?.color_identity||[];const cs=ci.length?ci.join(''):'C';
+  const arch=AR.find(x=>x.id===S.arch);const pt=PT.find(x=>x.id===S.pt);
+  const maxP=pt?Math.max(2,pt.max/10):30;const pf=pt&&pt.max<9999?` usd<=${maxP}`:'';
+  const base=`id<=${cs} -is:land -is:dfc game:paper${pf}`;
+  let n=0;
+  function log(msg){document.getElementById('lmsg').textContent=msg;const el=document.createElement('div');el.className='li';el.style.animationDelay=(n*.1)+'s';el.textContent='▸ '+msg;document.getElementById('llog').appendChild(el);n++;}
+  try{
+    log('Mana-Ramp laden…');const ramp=await sfQ(`${base} (o:"add" o:"mana" OR o:"search your library" o:"land") cmc<=4`,12);await slp(110);
+    log('Karten-Vorteil laden…');const draw=await sfQ(`${base} (o:"draw a card" OR o:"draw two cards") cmc<=6`,12);await slp(110);
+    log('Removal laden…');const rem=await sfQ(`${base} (o:"destroy target" OR o:"exile target" OR o:"counter target") cmc<=6`,12);await slp(110);
+    log(`${arch?arch.n+'-Synergien':'Synergien'} laden…`);const syn=await fArch(S.arch,cs,pf,22);await slp(110);
+    log('Win Conditions laden…');const win=await sfQ(`${base} (o:"you win the game" OR o:"each opponent loses")`,8);await slp(110);
+    log('Utility laden…');const util=await sfQ(`${base} (o:"hexproof" OR o:"indestructible" OR o:"haste") cmc<=3`,8);await slp(110);
+    log('Mana-Basis laden…');const nbl=await sfQ(`id<=${cs} type:land -type:basic game:paper${pf} (o:"add" OR o:"search your library")`,28);
+    const tb=Math.max(0,37-Math.min(nbl.length,20));const bpc=ci.length>0?Math.floor(tb/ci.length):0;
+    const basics=[];ci.forEach(c=>{const bn=BL[c];if(bn)for(let i=0;i<bpc;i++)basics.push({name:bn,type_line:'Basic Land',oracle_text:'',prices:{usd:'0.10'}});});
+    const ct2={name:'Command Tower',type_line:'Land',oracle_text:"Add one mana of any color in your commander's color identity.",prices:{usd:'0.50'}};
+    const dedup=arr=>{const s=new Set();return arr.filter(c=>{if(s.has(c.name))return false;s.add(c.name);return true;});};
+    const allL=dedup([ct2,{name:'Exotic Orchard',type_line:'Land',oracle_text:'Add mana.',prices:{usd:'1.00'}},...nbl,...basics]).slice(0,37);
+    const mk=c=>({name:c.name,type:(c.type_line||'').replace('Legendary ',''),text:(c.oracle_text||'').slice(0,110),price:parseFloat(c.prices?.usd||c.prices?.usd_foil||'0')||null,tier:tier(parseFloat(c.prices?.usd||'0')),power:c.edhrec_rank?Math.max(1,Math.min(5,6-Math.min(5,Math.floor(c.edhrec_rank/4000)))):3,img:gi(c,'small')});
+    S.cats=[
+      {name:'Mana Ramp',icon:'R',desc:'Mana-Beschleunigung',cards:dedup(ramp).slice(0,9).map(mk)},
+      {name:'Karten-Vorteil',icon:'D',desc:'Hand gefüllt halten',cards:dedup(draw).slice(0,9).map(mk)},
+      {name:'Removal',icon:'X',desc:'Bedrohungen beseitigen',cards:dedup(rem).slice(0,9).map(mk)},
+      {name:arch?arch.n+' Synergien':'Synergien',icon:arch?.g||'S',desc:arch?'Speziell für '+arch.n:'Kern-Synergien',cards:dedup(syn).slice(0,19).map(mk)},
+      {name:'Win Conditions',icon:'W',desc:'Direktpfade zum Sieg',cards:dedup(win).slice(0,5).map(mk)},
+      {name:'Utility',icon:'U',desc:'Schutz & Flexibilität',cards:dedup(util).slice(0,6).map(mk)},
+      {name:'Länder',icon:'L',desc:'Mana-Basis für '+cs,cards:allL.map(mk)},
+    ];
+    document.getElementById('p4l').style.display='none';renderRes();
+  }catch(err){document.getElementById('p4l').style.display='none';document.getElementById('p4e').style.display='block';document.getElementById('etxt').textContent=err.message;}
+}
+async function fArch(archId,cs,pf,lim){
+  const b=`id<=${cs} -is:land -is:dfc game:paper${pf}`;
+  const qs={blink:[`${b} (o:"enters the battlefield" o:"exile") type:creature`,`${b} o:"flicker"`],landfall:[`${b} o:"landfall"`,`${b} o:"land" o:"enters" type:creature`],counters:[`${b} o:"+1/+1 counter" type:creature`,`${b} o:"proliferate"`],infect:[`${b} o:"infect"`,`${b} o:"proliferate"`],tokens:[`${b} o:"create" o:"token" type:creature`,`${b} o:"populate"`],reanimator:[`${b} (o:"from your graveyard" OR o:"unearth") type:creature`,`${b} o:"return" o:"graveyard"`],combo:[`${b} o:"untap" o:"whenever" type:creature`,`${b} o:"copy" -type:creature`],voltron:[`type:equipment id<=${cs} game:paper${pf}`,`type:aura id<=${cs} game:paper${pf}`],aristocrats:[`${b} o:"sacrifice" o:"whenever" o:"dies" type:creature`,`${b} o:"whenever a creature" o:"dies"`],spellslinger:[`${b} o:"instant" o:"sorcery" o:"whenever" type:creature`,`${b} o:"copy" o:"spell"`],stax:[`${b} o:"opponent" o:"can't" type:permanent`,`${b} o:"pay" o:"more to cast"`],theft:[`${b} o:"gain control" type:creature`,`${b} o:"gain control" -type:creature`],tribal:[`${b} type:creature cmc<=3`,`${b} o:"of the chosen type"`],enchantress:[`${b} type:enchantment o:"draw"`,`${b} o:"enchantment" o:"whenever" type:creature`],graveyard:[`${b} (o:"flashback" OR o:"unearth" OR o:"dredge")`,`${b} o:"graveyard" o:"return" type:creature`],artifacts:[`type:artifact id<=${cs} game:paper${pf} o:"when"`,`${b} o:"artifact" o:"whenever" type:creature`]}[archId]||[`${b} type:creature cmc<=5`,`${b} -type:creature cmc<=4`];
+  const res=[];
+  for(const q of qs){if(res.length>=lim)break;const c2=await sfQ(q,lim);await slp(110);for(const c of c2){if(res.length>=lim)break;if(!res.find(r=>r.name===c.name))res.push(c);}}
+  return res;
+}
+function tier(p){if(!p||p<3)return'low';if(p<15)return'mid';return'high';}
+function renderRes(){
+  const c=S.cmd,b=BR.find(x=>x.id===S.bracket),p=PT.find(x=>x.id===S.pt),a=AR.find(x=>x.id===S.arch);
+  const ci=c?.color_identity||[];const tot=S.cats.reduce((s,x)=>s+x.cards.length,0);
+  document.getElementById('rtit').textContent=c?.name||'';
+  document.getElementById('rchips').innerHTML=[ci.map(col=>`<span class="chip" style="color:${CH[col]}">${CN[col]}</span>`).join(''),b?`<span class="chip" style="color:${b.c}">${b.label}</span>`:'',p?`<span class="chip" style="color:${p.c}">${p.l}</span>`:'',a?`<span class="chip" style="color:var(--gold)">${a.n}</span>`:'',S.collMode?`<span class="chip" style="color:#a78bfa">Sammlung</span>`:''].join('');
+  document.getElementById('rinfo').innerHTML=`<div class="ic"><div class="icl">Deck</div><div class="ict">${tot} Karten via Scryfall EDHREC-Ranking sortiert.</div></div><div class="ic"><div class="icl">Bracket ${b?.id||''}</div><div class="ict">${b?.rules.join(' · ')||''}</div></div><div class="ic"><div class="icl">Export</div><div class="ict">„Alles" lädt alle ${tot} Karten. „Auswahl" nur markierte.</div></div>`;
+  document.getElementById('rtabs').innerHTML=S.cats.map((cat,i)=>`<button class="tb ${i===0?'active':''}" onclick="swTab(${i})" id="tb${i}">${cat.name}<span class="tct">${cat.cards.length}</span></button>`).join('');
+  renderTab(0);document.getElementById('p4r').style.display='block';window.aTab=0;
+}
+function swTab(i){window.aTab=i;document.querySelectorAll('.tb').forEach((t,j)=>t.classList.toggle('active',j===i));renderTab(i);}
+function renderTab(i){
+  const cat=S.cats[i];if(!cat)return;
+  document.getElementById('rcont').innerHTML=`<div class="cath"><div><div class="catname">${cat.name}</div><div class="catdesc">${cat.desc}</div></div><button class="aab" onclick="addAll(${i})">Alle hinzufügen</button></div><div class="cgrid" id="cg${i}">${cat.cards.map((card,j)=>cH(card,i,j)).join('')}</div>`;
+}
+function cH(card,ci,ji){
+  const inD=S.dl.includes(card.name),owned=inC(card.name),miss=!owned&&S.collMode;
+  return`<div class="ccard ${inD?'ind':''} ${miss?'now':''}" id="cc${ci}_${ji}">
+    ${card.img?`<div class="caw"><img class="cai" src="${card.img}" alt="" loading="lazy" onerror="this.parentNode.style.display='none'"><div class="cao"></div></div>`:''}
+    <div class="cbody">
+      <div class="cname">${e(card.name)}</div>
+      ${card.type?`<div class="ctype">${e(card.type.slice(0,50))}</div>`:''}
+      ${card.text?`<div class="ctxt">${e(card.text)}</div>`:''}
+      <div class="cft">
+        <div class="pds">${[1,2,3,4,5].map(x=>`<div class="pd ${x<=card.power?'on':'off'}"></div>`).join('')}</div>
+        ${S.collMode?`<span class="obadge ${owned?'oy':'on2'}">${owned?'✓':'?'}</span>`:''}
+        <span class="ptag ${card.tier}">${card.tier}</span>
+        ${card.price?`<span class="prc">$${card.price.toFixed(2)}</span>`:''}
+        <button class="addb" onclick="togC('${eA(card.name)}',${ci},${ji})">${inD?'✓ Drin':'+'}</button>
+      </div>
+    </div></div>`;
+}
+function togC(name,ci,ji){if(S.dl.includes(name))S.dl=S.dl.filter(x=>x!==name);else S.dl.push(name);const el=document.getElementById(`cc${ci}_${ji}`);if(el){const cat=S.cats[ci];if(cat)el.outerHTML=cH(cat.cards[ji],ci,ji);}updDL();}
+function addAll(i){const cat=S.cats[i];if(!cat)return;cat.cards.forEach(c=>{if(!S.dl.includes(c.name))S.dl.push(c.name);});renderTab(i);updDL();}
+function updDL(){const dp=document.getElementById('dp');const n=S.dl.length;document.getElementById('dpcnt').textContent=n;document.getElementById('dpcmdr').textContent=S.cmd?.name||'';if(!n){dp.style.display='none';return;}dp.style.display='flex';document.getElementById('dplist').innerHTML=S.dl.map(name=>`<div class="dpli"><span>${e(name)}</span><button class="dprm" onclick="rmDL('${eA(name)}')">×</button></div>`).join('');}
+function rmDL(name){S.dl=S.dl.filter(x=>x!==name);updDL();if(window.aTab!==undefined)renderTab(window.aTab);}
+const dlF=(content,fname)=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type:'text/plain'}));a.download=fname;a.click();};
+function expS(){if(!S.dl.length)return;dlF(['1 '+(S.cmd?.name||'')+' *CMDR*'].concat(S.dl.map(n=>'1 '+n)).join('\n'),fn('_selection'));}
+function expA(){const s=new Set();const l=['1 '+(S.cmd?.name||'')+' *CMDR*'];S.cats.forEach(c=>c.cards.forEach(x=>{if(!s.has(x.name)){s.add(x.name);l.push('1 '+x.name);}}));dlF(l.join('\n'),fn('_full'));}
+function fn(suf){return(S.cmd?.name||'deck').replace(/[^a-zA-Z0-9]/g,'_')+suf+'.txt';}
+function go(n){
+  if(n===2&&!S.cmd)return;
+  if(n===2)setupS2();if(n===3)setupS3();
+  document.querySelectorAll('.page').forEach((p,i)=>p.classList.toggle('on',i+1===n));S.step=n;
+  for(let i=1;i<=4;i++){const d=document.getElementById('d'+i);d.classList.remove('active','done');if(i===n)d.classList.add('active');else if(i<n)d.classList.add('done');document.getElementById('dn'+i).textContent=i<n?'✓':i;}
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+go(1);
+</script>
+</body>
+</html>
